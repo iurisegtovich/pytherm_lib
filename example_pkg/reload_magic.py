@@ -55,4 +55,31 @@ def reinitLab(module_name,varsdict=None,echo=False):
         varsdict.update(filtereddict) #update as in "from m_HydLab import *"
         return filtereddict
     else:
-        return module_name_obj#return newly either newly imported module or update existing
+        return module_name_obj#returns either newly imported module or updated existing
+        
+        
+        
+#1 pylab magic https://github.com/ipython/ipython/search?q=pylab&unscoped_q=pylab
+#2 python tutor magic (eqe359)
+
+#    @magic_gui_arg
+#    def pylab(self, line=''):
+
+# gui, backend, clobbered = self.shell.enable_pylab(args.gui, import_all=import_all)
+
+#    def enable_pylab(self, gui=None, import_all=True, welcome_message=False):
+#        # We want to prevent the loading of pylab to pollute the user's
+#        # namespace as shown by the %who* magics, so we execute the activation
+#        # code in an empty namespace, and we update *both* user_ns and
+#        # user_ns_hidden with this information.
+#        ns = {}
+#        import_pylab(ns, import_all)
+#        self.user_ns.update(ns)
+
+# def import_pylab(user_ns, import_all=True):
+# exec(s, user_ns)
+
+#https://ipython.org/ipython-doc/3/config/custommagics.html
+
+#        print("Variables in the user namespace:", list(self.shell.user_ns.keys()))
+# AQUI PODE ATUALIZAR, NÃO É HACK DE PYTHON, É MAGICA DE IPYTHON
