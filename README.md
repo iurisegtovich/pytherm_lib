@@ -25,7 +25,7 @@ to write your content.
 obs: O SETUP.PY É O ARQUIVO DE RECEITA PARA GERAR O RELEASE,
 ELE PEGA O README DAQUI POIS ISSO ESTÁ INSTRUÍDO
 ELE PEGA OS ARQUIVOS DE DENTRO DA PASTA DO PACKAGE (setuptools.find_packages())
-ELE PARECE QUE NÃO PEGOU O LICENSE
+ELE PARECE QUE NÃO PEGOU O LICENSE (COLOQUEI UMA LINHA EXTRA NO SETUP.PY PARA PEGAR)
 
 acho que posso iniciar um git aqui e colocar esses comandos em um makefile
 e rodar um git clean para apagar os arquivos de build
