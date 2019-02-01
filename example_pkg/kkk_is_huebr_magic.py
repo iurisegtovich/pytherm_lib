@@ -30,7 +30,7 @@ class kkkishuebr(Magics):
     @line_magic
     def kkkishuebr(self, line):
         "line magic to popullate namespace with kkk=huebr"
-        self.shell.user_ns.update({'kkk':'huebr'})
+        self.shell.user_ns.update({'kkk':'huebr11'})
         return
 
 # register to make the module have effect in the notebook
