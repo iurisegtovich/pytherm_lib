@@ -63,3 +63,4 @@ ip.register_magics(rimport)
 
 #END<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+#MAKE USABLE FROM PLAIN PYTHON WITHOUT USING THE %MAGIC (DOES NOT USE USER_NS ANYWAYS)
