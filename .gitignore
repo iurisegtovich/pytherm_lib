@@ -1,5 +1,5 @@
 build/
 dist/
-example_pkg_iurisegtovich.egg-info/
+python_luri_iurisegtovich.egg-info/
 
 **/*.pyc
