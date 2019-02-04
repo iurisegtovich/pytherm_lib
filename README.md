@@ -29,3 +29,23 @@ ELE PARECE QUE NÃO PEGOU O LICENSE (COLOQUEI UMA LINHA EXTRA NO SETUP.PY PARA P
 
 acho que posso iniciar um git aqui e colocar esses comandos em um makefile
 e rodar um git clean para apagar os arquivos de build
+
+9. INSTALL FROM ZIP: python -m pip install -I dist/python_luri_iurisegtovich-0.0.3-py3-none-any.whl
+
+10. "INSTALL DEVELOPMENT VERSION": 
+IN ANOTHER PROJECT DIRECTORY
+pip install --e git+http://repo/my_project.git#egg=SomeProject
+[https://pip.pypa.io/en/stable/reference/pip_install/]
+python -m pip install -e git+https://github.com/iurisegtovich/python_luri.git@master#egg=python_luri_iurisegtovich
+> install in a "src" dir under the dir from where pip was ran.
+
+> any changes in those src files are reflected on usage of the lib
+> the lib can be imported from anywhere as if it was installed in site-packages (actually because the created src dir is added to the sys.path variable)
+
+> check with: "python -m pip list"
+> uninstall with: python -m pip uninstall python_luri_iurisegtovich
+
+
+
+
+
