@@ -3,3 +3,12 @@ dist/
 pytherm_lib_iurisegtovich.egg-info
 
 **/*.pyc
+
+**/refs/
+
+**/*.o
+**/*.so
+**/*.mod
+
+**/*.a
+**/*.elf
