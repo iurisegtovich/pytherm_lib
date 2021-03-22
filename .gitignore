@@ -12,3 +12,9 @@ pytherm_lib_iurisegtovich.egg-info
 
 **/*.a
 **/*.elf
+
+**/__pycache__/
+**.pyc
+**.ipynb_checkpoints
+
+**nohup.out

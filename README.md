@@ -3,6 +3,10 @@
 This is a simple repo for the project
 
 
+python -m pip install -e git+https://github.com/iurisegtovich/pytherm_lib.git@master#egg=pytherm_lib_iurisegtovich
+
+- - -
+
 1. FOLLOWING TUTORIAL AT https://packaging.python.org/tutorials/packaging-projects/
 
 2. BUILD PACKAGE: python setup.py sdist bdist_wheel
