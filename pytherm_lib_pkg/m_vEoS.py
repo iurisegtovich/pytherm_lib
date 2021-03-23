@@ -1,4 +1,35 @@
-'''...'''
+'''equação de estado cúbica (peng robinson)
+com regra de combinação clássica
+e regras de mistura b:linear e a:quadrática
+uso:
+
+ncomp=2
+cnames=["co2",     "benzene"]
+Tc = [304.1, 562., ] #K floats
+Pc = [73.8e5,    48.9e5, ] #Pa floats
+acentric = [0.239,    0.212, ] #dimensionless floats
+k = [[0., 0.,],
+              [0.,0.,],] #dimensionless floats
+
+eos=m_vEoS.c_vEoS(ncomp,Tc,Pc,acentric,k)
+
+T=283.    #K
+P=40e5 #Pa
+x=[0.93, 0.7,] #fração normaliada; dtype=np.float64
+
+VL,VV=eos.Volume(T,P,x)
+PL=eos.Pressure(T,VL,x)
+PV=eos.Pressure(T,VV,x)
+phiL=eos.fugacity_coeff(T,VL,x)
+phiV=eos.fugacity_coeff(T,VV,x)
+HrL=eos.f_H_res(T,VL,x)
+HrV=eos.f_H_res(T,VV,x)
+SrL=eos.f_S_res(T,VL,x)
+SrV=eos.f_S_res(T,VV,x)    
+print('VL,VV,PL,PV,fL,fV,HrL,HrV,SrL,SrV')
+print(VL,VV,PL,PV,fL,fV,HrL,HrV,SrL,SrV)
+
+'''
 
 #THE-LIBRARY#
 import numpy as np
@@ -32,13 +63,14 @@ class c_vEoS(): #Peng Robinson
             self.bc[i]                     = 0.07780*_R*(self.Tc[i])/(Pc[i])
 
             for j in range(self.ncomp):
-                self.k[i,j]                = k[i,j]
+                self.k[i,j]                = k[i][j] #accepts array or list, copies all parameters
                 
             self.kPR[i]                    = 0.37464 + 1.54226*acentric[i]-0.26992*(acentric[i])**2
                 
         return #NoneTypeObj
 
     def Pressure(self,T,V,x):
+        x=np.asarray(x,dtype=np.float64)
         bm=self._f_bmix(x)
         Aalpham,Aalpha=self._f_Aalphamix(T,x)
         P = (_R*T)/(V-bm) - Aalpham/(V**2 + 2*bm*V - bm**2) #sigma & epsilon hardcoded here
@@ -85,6 +117,7 @@ class c_vEoS(): #Peng Robinson
         return dAalphadn, Aalpham
 
     def Volume(self,T,P,x):
+        x=np.asarray(x,dtype=np.float64)
     # T em unidade K
     # P em unidade Pa
     # x array normalizado
@@ -112,6 +145,7 @@ class c_vEoS(): #Peng Robinson
 
     #phase equilibrium common
     def fugacity_coeff(self,T,V,x): #for a vdw1f mixrule cubic eos with sigma!=epsilon
+        x=np.asarray(x,dtype=np.float64)
         P=self.Pressure(T,V,x)
         dbdn,bm = self._f_dbdn(x)
         dAalphadn, Aalpham = self._f_dAalphadn(T,x)
@@ -164,6 +198,7 @@ class c_vEoS(): #Peng Robinson
 
     #other spec flashes
     def f_H_res(self,T,V,x):
+        x=np.asarray(x,dtype=np.float64)
         P=self.Pressure(T,V,x)
         bm=self._f_bmix(x)
         dAalphamdT = self._f_dAalphamdT(T,x)
@@ -174,6 +209,7 @@ class c_vEoS(): #Peng Robinson
         return H_res
 
     def f_S_res(self,T,V,x):
+        x=np.asarray(x,dtype=np.float64)
         P=self.Pressure(T,V,x)
         bm=self._f_bmix(x)
         dAalphamdT = self._f_dAalphamdT(T,x)
