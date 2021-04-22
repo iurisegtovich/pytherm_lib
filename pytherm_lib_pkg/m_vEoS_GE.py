@@ -1,3 +1,5 @@
+'''to do: regra de mistura com ge'''
+
 '''equação de estado cúbica (peng robinson)
 com regra de combinação clássica
 e regras de mistura b:linear e a:quadrática
@@ -36,7 +38,7 @@ import numpy as np
 from scipy.constants import R as _R
 #objetivo - código simples, sem polimorfismo, implementação de uma única EoS, toma Peng e Robinson como base, inclui modificações, fazer consistency checks nessa rotina (tipos e valores)
 class c_vEoS(): #Peng Robinson
-    def __init__(self,ncomp,Tc,Pc,acentric,k,iA=None,iApar=None): #roda uma vez para carregar as propriedades por componentes
+    def __init__(self,ncomp,Tc,Pc,acentric,k,iA=None,iApar=None,q_alpha=None,q_A=None): #roda uma vez para carregar as propriedades por componentes
                
         #Array dimensioning info
         self.ncomp = ncomp
@@ -53,7 +55,17 @@ class c_vEoS(): #Peng Robinson
             self.iApar=iApar
             #w_i = iApar[i,0] #pr76
             #mj,nj,Gj = iApar[j,0:3] #prat
-            
+        
+        
+        #q_alpha=np.zeros([2,2])
+        #q_A=np.zeros([2,2])
+        #q_alpha[0,1]=q_alpha[1,0]=.4
+        #q_A[0,1]= 99.422
+        #q_A[1,0]= 372.298
+        self.q_A=np.asarray(q_A)
+        self.q_alpha=np.asarray(q_alpha)
+        
+        
         
         #vEoS specific parameters 
         self.sigma = 1.0 + np.sqrt(2.)
@@ -122,18 +134,13 @@ class c_vEoS(): #Peng Robinson
             bm += x[i]*self.bc[i]
         return bm
         
-    def _f_Aalphamix(self,T,x):
-        #regra de combinação classica com kij
-        #regra de mistura quadrática
-        Aalpha=self._f_Aalpha(T)
-        Aalpham = 0.
-        for i in range(self.ncomp):
-            for j in range(self.ncomp):
-                                      #>>>Aalpha_comb[i,j]<<<<<<<<<<<<<<<<<<<<<<<<<#
-                Aalpham += x[i]*x[j] * np.sqrt(Aalpha[i]*Aalpha[j])*(1.-self.k[i,j])
-        
-        #print('Aalpham=',Aalpham)
-        return Aalpham, Aalpha
+    #def _f_Aalphamix(self,T,x):
+        #Aalpha=self._f_Aalpha(T)
+        #Aalpham = 0.
+        #for i in range(self.ncomp):
+            #for j in range(self.ncomp):
+                #Aalpham += x[i]*x[j]*np.sqrt(Aalpha[i]*Aalpha[j])*(1.-self.k[i,j])
+        #return Aalpham, Aalpha
      
     def _f_dbdn(self,x):
         bm=self._f_bmix(x)
@@ -151,7 +158,6 @@ class c_vEoS(): #Peng Robinson
             for j in range(self.ncomp):
                 sum1 += x[j]*np.sqrt(Aalpha[j])*(1.-self.k[i,j])
             dAalphadn[i]=np.sqrt(Aalpha[i])*sum1
-        
         return dAalphadn, Aalpham
 
     def Volume(self,T,P,x):
@@ -175,80 +181,135 @@ class c_vEoS(): #Peng Robinson
         return np.array([np.nanmin(Vs[Vs>bm]),np.nanmax(Vs[Vs>bm])])
 
     #phase equilibrium common
+    #def fugacity_coeff(self,T,V,x): #for a vdw1f mixrule cubic eos with sigma!=epsilon
+        #x=np.asarray(x,dtype=np.float64)
+        #P=self.Pressure(T,V,x)
+        #dbdn,bm = self._f_dbdn(x)
+        #dAalphadn, Aalpham = self._f_dAalphadn(T,x)
+        #qsi = (1./(bm*(self.epsilon-self.sigma)))*np.log((V+self.epsilon*bm)/(V+self.sigma*bm))
+        #lnPhi = np.zeros(self.ncomp)
+        #for i in range(self.ncomp):
+            #lnPhi[i] = ( #multiline
+                #(dbdn[i]/bm)*((P*V)/(_R*T)-1.) #&
+                #-np.log(P*(V-bm)/(_R*T)) #&
+                #-(Aalpham/(_R*T))*qsi*((2.*dAalphadn[i]/Aalpham) #&
+                #-(dbdn[i]/bm))
+                                 #)#done
+        #phi = np.exp(lnPhi)
+        #return phi
+
+
+
+
+
+
+
+
+
+#####
+    def f_gamma_NRTL(self,T,c_x,q_alpha, q_A):
+        '''T :  temperatura float escalar
+        c_x : composição fração molar normalizada, float array1d matriz coluna
+        q_alpha, q_tau : parametros, arra2d matriz quadrada'''
+        
+        q_tau     = q_A/T
+        q_G       = np.exp(-(q_alpha*q_tau))
+        l_D       = ((1/((q_G.T) @ c_x)).T)
+        q_E       = (q_tau*q_G) * l_D 
+        gamma     = np.exp(((q_E+(q_E.T))-(((q_G * l_D) * (c_x.T)) @ (q_E.T))) @ c_x)
+        
+        ge = 0
+        ncomp=q_A.shape[0]
+        for i in range(ncomp):
+            ge += _R*T*np.log(gamma[i])*c_x[i,0]
+        
+        return gamma, ge
+
+        
+    def _f_Aalphamix(self, T, x):
+        
+        Aalpha = self._f_Aalpha(T)
+        
+        bm = self._f_bmix(x)
+        
+
+        
+        ncomp=2
+        c_x = np.reshape(x,[ncomp,1])
+        
+        am = 0.
+        _,ge0 = self.f_gamma_NRTL(T,c_x,self.q_alpha, self.q_A) #!!!
+        #print('ge0=',ge0)
+        A1 = -0.64663 #posso estimar isso ?
+
+        bm = self._f_bmix(x=x) 
+        am = 0.
+
+        soma1 = 0
+        soma2 = 0
+        for i in range(self.ncomp):
+            soma1 += x[i]*Aalpha[i]/(self.bc[i])  #ok
+            soma2 += x[i]*np.log(bm/self.bc[i]) #ok/
+            
+        am = bm*(ge0/A1 + soma1 + _R*T/A1 * soma2) 
+        #print('am=',am)
+        return am, Aalpha
+     
+    def _f_dqdn(self, x,T):
+        
+        Aalpham, Aalpha = self._f_Aalphamix(T,x)
+        
+        
+        
+        A1 = -0.64663
+        bm = self._f_bmix(x=x)
+        
+        q = Aalpha/(self.bc*_R*T)
+        
+        
+        ncomp=2
+        c_x = np.reshape(x,[ncomp,1])
+        
+        d_q = np.zeros(self.ncomp)
+        gamma,_ = self.f_gamma_NRTL(T,c_x,self.q_alpha, self.q_A) #!!!
+        gamma=gamma[:,0]
+        
+        for i in range(self.ncomp):
+            d_q[i] = (1/A1) * (np.log(gamma[i]) + np.log(bm/self.bc[i])+ self.bc[i]/bm-1)  + q[i]  #conferir derivada - resultados ok
+        #print('d_q 1',d_q)
+        
+        #alt
+        #for i in range(self.ncomp):
+            #d_q[i] = (1/A1) * (np.log(gamma[i]) + np.log(bm/self.bc[i]) )  + q[i]   #conferir derivada - resultados estranhos
+        #print('d_q 2',d_q)
+        return d_q, Aalpham
+        
+    
     def fugacity_coeff(self,T,V,x): #for a vdw1f mixrule cubic eos with sigma!=epsilon
         x=np.asarray(x,dtype=np.float64)
         P=self.Pressure(T,V,x)
         dbdn,bm = self._f_dbdn(x)
-        dAalphadn, Aalpham = self._f_dAalphadn(T,x)
-        qsi = (1./(bm*(self.epsilon-self.sigma)))*np.log((V+self.epsilon*bm)/(V+self.sigma*bm))
+        lnPhi = np.zeros(self.ncomp)
+
+        P = self.Pressure(x=x,T=T,V=V)
+
+        d_q,am = self._f_dqdn(x=x,T=T)
+        
         lnPhi = np.zeros(self.ncomp)
         for i in range(self.ncomp):
-            lnPhi[i] = ( #multiline
-                (dbdn[i]/bm)*((P*V)/(_R*T)-1.) #&
-                -np.log(P*(V-bm)/(_R*T)) #&
-                -(Aalpham/(_R*T))*qsi*
-                ((2.*dAalphadn[i]/Aalpham) -(dbdn[i]/bm))
-                                 )#done
-        #print('dq=',(Aalpham/(_R*T))*(1./(bm))*((2.*dAalphadn[:]/Aalpham) -(dbdn[:]/bm)) )
+            
+            lnPhi[i] = ( 
+                          (self.bc[i]/bm)*(P*V/(_R*T) - 1)  #svnas
+                          - np.log(P*(V - bm)/(_R*T)) 
+                          - d_q[i] * 1/(self.epsilon-self.sigma) * np.log((V+self.epsilon*bm)/(V+self.sigma*bm))
+                       )
+            #não tem um bi/bm aqui ...?
+            
         phi = np.exp(lnPhi)
+        
         return phi
-
-    def _f_dAalphadT(self,T,x):
-        dalphadT=np.zeros(self.ncomp)
-        dAalphadT=np.zeros(self.ncomp)
-        for i in range(self.ncomp):
-            #alpha[i] = (1. + self.kPR[i]*(1.-np.sqrt(T/self.Tc[i])))**2
-            dalphadT[i] = ( #multiline
-                2.*(1. + self.kPR[i]*(1.-np.sqrt(T/self.Tc[i])))*
-                self.kPR[i]*(-1.)*(
-                1./(2.*(np.sqrt(T/self.Tc[i])))
-                )*(1./self.Tc[i])
-            )
-            dAalphadT[i] = self.ac[i]*dalphadT[i]
-        return dAalphadT
-
-    def _f_dAalphamdT(self,T,x):
-        _, Aalpha=self._f_Aalphamix(T,x)
-        dAalphadT=self._f_dAalphadT(T,x)
-
-        dAalphamdT = 0.
-        for i in range(self.ncomp):
-            for j in range(self.ncomp):
-                dAalphamdT += ( #multiline
-                    x[i]*x[j]*
-                    (1./(2.*np.sqrt(Aalpha[i]*Aalpha[j])))*
-                    (Aalpha[i]*dAalphadT[j]+dAalphadT[i]*Aalpha[j])*
-                    (1.-self.k[i,j])
-                )
-        #print(dAalphamdT)
-        #numerical
-        #AalphammaisT,_=self._f_Aalphamix(T+1e-3,x)
-        #AalphammenosT,_=self._f_Aalphamix(T-1e-3,x)
-        #dAalphamdT=(AalphammaisT-AalphammenosT)/(2.*1e-3)
-        #print(dAalphamdT)
-        return dAalphamdT
-
-    #other spec flashes
-    def f_H_res(self,T,V,x):
-        x=np.asarray(x,dtype=np.float64)
-        P=self.Pressure(T,V,x)
-        bm=self._f_bmix(x)
-        dAalphamdT = self._f_dAalphamdT(T,x)
-        Aalpham, _ = self._f_Aalphamix(T,x)
-        qsi = (1./(bm*(self.epsilon-self.sigma)))*np.log((V+self.epsilon*bm)/(V+self.sigma*bm)) #again
-        H_res = P*V - _R*T + (T*dAalphamdT-Aalpham)*qsi
-#        print(Aalpham)
-        return H_res
-
-    def f_S_res(self,T,V,x):
-        x=np.asarray(x,dtype=np.float64)
-        P=self.Pressure(T,V,x)
-        bm=self._f_bmix(x)
-        dAalphamdT = self._f_dAalphamdT(T,x)
-        Aalpham, Aalpha = self._f_Aalphamix(T,x)
-        qsi = (1./(bm*(self.epsilon-self.sigma)))*np.log((V+self.epsilon*bm)/(V+self.sigma*bm)) #again
-        S_res = _R*np.log((P*(V-bm))/(_R*T)) + dAalphamdT*qsi
-        return S_res
+    
+###
 
 def test():
     import numpy as np

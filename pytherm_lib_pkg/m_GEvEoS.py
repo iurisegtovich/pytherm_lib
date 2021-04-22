@@ -131,8 +131,6 @@ class c_vEoS(): #Peng Robinson
             for j in range(self.ncomp):
                                       #>>>Aalpha_comb[i,j]<<<<<<<<<<<<<<<<<<<<<<<<<#
                 Aalpham += x[i]*x[j] * np.sqrt(Aalpha[i]*Aalpha[j])*(1.-self.k[i,j])
-        
-        #print('Aalpham=',Aalpham)
         return Aalpham, Aalpha
      
     def _f_dbdn(self,x):
@@ -151,7 +149,6 @@ class c_vEoS(): #Peng Robinson
             for j in range(self.ncomp):
                 sum1 += x[j]*np.sqrt(Aalpha[j])*(1.-self.k[i,j])
             dAalphadn[i]=np.sqrt(Aalpha[i])*sum1
-        
         return dAalphadn, Aalpham
 
     def Volume(self,T,P,x):
@@ -186,10 +183,9 @@ class c_vEoS(): #Peng Robinson
             lnPhi[i] = ( #multiline
                 (dbdn[i]/bm)*((P*V)/(_R*T)-1.) #&
                 -np.log(P*(V-bm)/(_R*T)) #&
-                -(Aalpham/(_R*T))*qsi*
-                ((2.*dAalphadn[i]/Aalpham) -(dbdn[i]/bm))
+                -(Aalpham/(_R*T))*qsi*((2.*dAalphadn[i]/Aalpham) #&
+                -(dbdn[i]/bm))
                                  )#done
-        #print('dq=',(Aalpham/(_R*T))*(1./(bm))*((2.*dAalphadn[:]/Aalpham) -(dbdn[:]/bm)) )
         phi = np.exp(lnPhi)
         return phi
 

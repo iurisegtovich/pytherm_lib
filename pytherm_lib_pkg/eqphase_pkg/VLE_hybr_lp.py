@@ -17,9 +17,24 @@ def BubblePy(T,x,eos,ge,psat):
     psat=np.asarray(psat)
     x=np.asarray(x)
     #estimativa inicial de Pbolha
-    P = np.sum(psat*x) #vetorial
+    ncomp=len(x)
+    fugl=np.zeros(ncomp)
+    
+    for i in range(ncomp):
+        if psat[i] is not None:
+            fugl[i]=psat[i]
+        else:
+            hiP=eos.Pc[i]*1. #sempre tem líq de Pc para cima, vamos usar fugL em Pc e esquecer a correção de poynt seja para + ou - pressão
+            xpure=np.zeros(ncomp)
+            xpure[i]=1.
+            Vm_L,Vm_V = eos.Volume(T,hiP,xpure)
+            phi_L=eos.fugacity_coeff(T,Vm_L,xpure)
+            #print('phiv',Vm_V,phi_V)
+            fugl[i]=phi_L[i]*x[i]*hiP #vetorial     
+            
+    P = np.sum(fugl*x) #vetorial
     #print('guess',P/1e5)
-    y = x*psat/P #vetorial
+    y = x*fugl/P #vetorial
     #print('guess',y)
     
     j=0
@@ -34,8 +49,14 @@ def BubblePy(T,x,eos,ge,psat):
     while (res_loopP>tol_loopP and j<jmax):
         
         #fugacidade do liquido
+        
+        Vm_L,Vm_V = eos.Volume(T,P,x)
+        phi_L=eos.fugacity_coeff(T,Vm_L,x)
+        #print('phiv',Vm_V,phi_V)
+        f_L=phi_L*x*P #vetorial        
+        
         gamma = ge.gamma(T,x)
-        f_L=gamma*x*psat
+        f_L=gamma*x*fugl
         #print('gamma',gamma)
         
         res_loopY=1 #qq coisa maior q 1e-6

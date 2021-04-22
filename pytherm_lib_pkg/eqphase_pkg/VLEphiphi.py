@@ -3,23 +3,19 @@
 #Py->Tx   reuires ~psat list of callables as psat(t)~
 #Ty->px
 import numpy as np
-
 #easyest and more relevant:
 #Tx -> Py
-def BubblePy(T,x,eos,ge,psat):
+def BubblePy(T,x,eos,guessP,guessy):
     """temp scalar
        x array
        eos callable as eos.fug and eos.vol
        ge callable as ge.gamma
-       psat list of psat at t
-       ref Sandler 4th"""
+       psat list of psat at t"""
        
-    psat=np.asarray(psat)
-    x=np.asarray(x)
     #estimativa inicial de Pbolha
-    P = np.sum(psat*x) #vetorial
+    P = guessP*1.
     #print('guess',P/1e5)
-    y = x*psat/P #vetorial
+    y = guessy*1
     #print('guess',y)
     
     j=0
@@ -34,8 +30,10 @@ def BubblePy(T,x,eos,ge,psat):
     while (res_loopP>tol_loopP and j<jmax):
         
         #fugacidade do liquido
-        gamma = ge.gamma(T,x)
-        f_L=gamma*x*psat
+        Vm_L,Vm_V = eos.Volume(T,P,x)
+        phi_L=eos.fugacity_coeff(T,Vm_L,x)
+        #print('phiv',Vm_V,phi_V)
+        f_L=phi_L*x*P #vetorial
         #print('gamma',gamma)
         
         res_loopY=1 #qq coisa maior q 1e-6
@@ -48,7 +46,12 @@ def BubblePy(T,x,eos,ge,psat):
             phi_V=eos.fugacity_coeff(T,Vm_V,y/soma_y)
             #print('phiv',Vm_V,phi_V)
             f_V=phi_V*y*P #vetorial
-
+            
+            #print(y,x)
+            
+            #if np.linalg.norm(y/soma_y - x/np.sum(x) ) < 1e-4:
+                #raise StopIteration('solução trivial bruh')
+            
             #calculando yi'
             y_novo=y*f_L/f_V
 
@@ -67,4 +70,13 @@ def BubblePy(T,x,eos,ge,psat):
         P=P*soma_y #atualiza P
         #print("Pbar=",P/1e5)
         j=j+1
+        
+    if np.linalg.norm(y/soma_y - x/np.sum(x) ) < 1e-4:
+        print ('solução trivial bruh')
+        P=np.nan
+        y[:]=np.nan
+        
     return  P, y, i, j
+
+
+

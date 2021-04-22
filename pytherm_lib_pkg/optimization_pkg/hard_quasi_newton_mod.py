@@ -41,76 +41,100 @@ def minimize_linesearch(objF,x0,step):
     b=1
 
     
-    fa=objF(a*step+x0)
-    fb=objF(b*step+x0)
+    #fa=objF(a*step+x0)
+    #fb=objF(b*step+x0)
     
     
-    if fb<fa: #b ok, falta acertar x
-        c=2
-        fc=objF(c*step+x0)
+    #if fb<fa: #a ok, falta acertar c
+        #c=2
+        #fc=objF(c*step+x0)
 
-        i=0
-        imax=10
-        while i<imax and not fc>fb: 
-            c=c*2 #towards inf
-            fc=objF(c*step+x0)        
-            i+=1
+        #i=0
+        #imax=10
+        #while i<imax and not fc>fb: 
+            #c=c*2 #towards inf
+            #fc=objF(c*step+x0)        
+            #i+=1
         
-    else: #c ok, falta acertar b
-        c=b*1
-        fc=fb*1
+    #else: #c ok, falta acertar b
+        #c=b*1
+        #fc=fb*1
         
-        i=0
-        imax=10
-        while i<imax and not fb<fa:
-            b=b/2 #towards zero
-            fb=objF(b*step+x0)
-            i+=1
+        #i=0
+        #imax=10
+        #while i<imax and not fb<fa:
+            #b=b/2 #towards zero
+            #fb=objF(b*step+x0)
+            #i+=1
     
-    alpha = gss(f=lambda alpha:objF(alpha*step+x0),
-                a=a,
-                b=c)
+    #alpha = gss(f=lambda alpha:objF(alpha*step+x0),
+                #a=b,
+                #b=c)
     
     #print(alpha)
+    #print(objF(alpha*step+x0))
     #input('alpha')
-    return alpha
+    #return alpha
+    
+    from scipy import optimize as opt
+    #alpha = gss(f=lambda alpha:objF(x0 + alpha*step),
+                #a=a, 
+                #b=c)
+    #assert(fa<fb<fc)
+    
+    a,b,c,fa,fb,fc,_=opt.bracket(func=lambda alpha:objF(x0 + alpha*step),xa=a,xb=b)
+    
+    abc=np.array([a,b,c])
+    fabc=np.array([fa,fb,fc])
+    idx = np.argsort(abc)
+    a,b,c=abc[idx]
+    fa,fb,fc=fabc[idx]
+    
+    #print(a,b,c,fa,fb,fc)
+    #input('paused')
+    alpha=opt.golden(func=lambda alpha:objF(x0 + alpha*step), brack=(a, b, c))
+    
+    #print(alpha)
+    #print(objF(alpha*step+x0))
+    #input('alpha')
+    return alpha    
 
-def gss(f,a,b):
-    invphi = (np.sqrt(5) - 1) / 2  # 1 / phi
-    invphi2 = (3 - np.sqrt(5)) / 2  # 1 / phi^2
-    tol=1e-3 #loose criteria for gss
-    h = b-a
+#def gss(f,a,b):
+    #invphi = (np.sqrt(5) - 1) / 2  # 1 / phi
+    #invphi2 = (3 - np.sqrt(5)) / 2  # 1 / phi^2
+    #tol=1e-3 #loose criteria for gss
+    #h = b-a
 
-    # Required steps to achieve tolerance
-    n = int(np.ceil(np.log(tol / h) / np.log(invphi)))
+    #Required steps to achieve tolerance
+    #n = int(np.ceil(np.log(tol / h) / np.log(invphi)))
 
-    c = a + invphi2 * h
-    d = a + invphi * h
-    yc = f(c)
-    yd = f(d)
+    #c = a + invphi2 * h
+    #d = a + invphi * h
+    #yc = f(c)
+    #yd = f(d)
 
-    for k in range(n-1):
-        if yc < yd:
-            b = d
-            d = c
-            yd = yc
-            h = invphi * h
-            c = a + invphi2 * h
-            yc = f(c)
-        else:
-            a = c
-            c = d
-            yc = yd
-            h = invphi * h
-            d = a + invphi * h
-            yd = f(d)
+    #for k in range(n-1):
+        #if yc < yd:
+            #b = d
+            #d = c
+            #yd = yc
+            #h = invphi * h
+            #c = a + invphi2 * h
+            #yc = f(c)
+        #else:
+            #a = c
+            #c = d
+            #yc = yd
+            #h = invphi * h
+            #d = a + invphi * h
+            #yd = f(d)
 
-    if yc < yd:
-        alpha= (a+ d)/2
-    else:
-        alpha= (c+ b)/2
+    #if yc < yd:
+        #alpha= (a+ d)/2
+    #else:
+        #alpha= (c+ b)/2
 
-    return alpha
+    #return alpha
 
 def minimize(objF,x0):
     n=len(x0)
