@@ -15,7 +15,7 @@ eos=m_vEoS.c_vEoS(ncomp,Tc,Pc,acentric,k)
 
 T=283.    #K
 P=40e5 #Pa
-x=[0.93, 0.7,] #fração normaliada; dtype=np.float64
+x=[0.93, 0.07,] #fração normaliada; dtype=np.float64
 
 VL,VV=eos.Volume(T,P,x)
 PL=eos.Pressure(T,VL,x)
@@ -56,8 +56,8 @@ class c_vEoS(): #Peng Robinson
             
         
         #vEoS specific parameters 
-        self.sigma = 1.0 + np.sqrt(2.)
-        self.epsilon = 1.0 - np.sqrt(2.)
+        self.sigma = 1.0 + np.sqrt(2.) #PR
+        self.epsilon = 1.0 - np.sqrt(2.) #PR
         self.ac = np.zeros(self.ncomp)
         self.bc = np.zeros(self.ncomp)
         self.k = np.zeros([self.ncomp,self.ncomp])
@@ -75,8 +75,8 @@ class c_vEoS(): #Peng Robinson
             self.acentric[i]         = acentric[i]
         
         for i in range(self.ncomp):
-            self.ac[i]                     = 0.45724*(_R**2)*((self.Tc[i])**2)/(self.Pc[i])
-            self.bc[i]                     = 0.07780*_R*(self.Tc[i])/(Pc[i])
+            self.ac[i]                     = 0.45724*(_R**2)*((self.Tc[i])**2)/(self.Pc[i]) #PR
+            self.bc[i]                     = 0.07780*_R*(self.Tc[i])/(Pc[i]) #PR
 
             for j in range(self.ncomp):
                 self.k[i,j]                = k[i][j] #accepts array or list, copies all parameters
@@ -154,6 +154,18 @@ class c_vEoS(): #Peng Robinson
         
         return dAalphadn, Aalpham
 
+    def _f_dAalphadn_svnas(self,T,x):
+        Aalpham, Aalpha = self._f_Aalphamix(T,x)
+        dAalphadn = np.zeros(self.ncomp)
+        sum1 = 0.
+        for i in range(self.ncomp):
+            sum1 = 0.
+            for j in range(self.ncomp):
+                sum1 += x[j]*np.sqrt(Aalpha[i]*Aalpha[j])*(1.-self.k[i,j])
+            dAalphadn[i]=2*sum1 - Aalpham
+        
+        return dAalphadn, Aalpham
+
     def Volume(self,T,P,x):
         x=np.asarray(x,dtype=np.float64)
     # T em unidade K
@@ -182,6 +194,7 @@ class c_vEoS(): #Peng Robinson
         dAalphadn, Aalpham = self._f_dAalphadn(T,x)
         qsi = (1./(bm*(self.epsilon-self.sigma)))*np.log((V+self.epsilon*bm)/(V+self.sigma*bm))
         lnPhi = np.zeros(self.ncomp)
+        lnPhi_svna = np.zeros(self.ncomp)
         for i in range(self.ncomp):
             lnPhi[i] = ( #multiline
                 (dbdn[i]/bm)*((P*V)/(_R*T)-1.) #&
@@ -190,7 +203,22 @@ class c_vEoS(): #Peng Robinson
                 ((2.*dAalphadn[i]/Aalpham) -(dbdn[i]/bm))
                                  )#done
         #print('dq=',(Aalpham/(_R*T))*(1./(bm))*((2.*dAalphadn[:]/Aalpham) -(dbdn[:]/bm)) )
-        phi = np.exp(lnPhi)
+        
+        #svna
+        Isvna = (1./(self.epsilon-self.sigma)) * np.log((V+self.epsilon*bm)/(V+self.sigma*bm))
+        q=Aalpham/(bm*_R*T)
+        dAalphadn_svnas, Aalpham = self._f_dAalphadn_svnas(T,x)
+        dqdn=q*(1+dAalphadn_svnas[:]/Aalpham-dbdn[:]/bm)
+        for i in range(self.ncomp):
+            lnPhi_svna[i] = ( #multiline
+                (dbdn[i]/bm)*((P*V)/(_R*T)-1.) #&
+                -np.log(P*(V-bm)/(_R*T)) #&
+                -dqdn[i]*Isvna
+                                 )#done
+        
+        #print('...',lnPhi_svna)
+        #print('>>>',lnPhi)
+        phi = np.exp(lnPhi_svna)
         return phi
 
     def _f_dAalphadT(self,T,x):
