@@ -17,7 +17,7 @@ eos=m_vEoS.c_vEoS(ncomp,Tc,Pc,acentric,k)
 
 T=283.    #K
 P=40e5 #Pa
-x=[0.93, 0.7,] #fração normaliada; dtype=np.float64
+x=[0.93, 0.07,] #fração normaliada; dtype=np.float64
 
 VL,VV=eos.Volume(T,P,x)
 PL=eos.Pressure(T,VL,x)
@@ -28,8 +28,8 @@ HrL=eos.f_H_res(T,VL,x)
 HrV=eos.f_H_res(T,VV,x)
 SrL=eos.f_S_res(T,VL,x)
 SrV=eos.f_S_res(T,VV,x)    
-print('VL,VV,PL,PV,fL,fV,HrL,HrV,SrL,SrV')
-print(VL,VV,PL,PV,fL,fV,HrL,HrV,SrL,SrV)
+print('VL,VV,PL,PV,phiL,phiV,fL,fV,HrL,HrV,SrL,SrV')
+print(VL,VV,PL,PV,fL,fV,HrL,PL*x*phiL,PV*x*phiV,HrV,SrL,SrV)
 
 '''
 
@@ -346,10 +346,14 @@ def test():
     PL=vEoS_obj.Pressure(T,VL,x)
     PV=vEoS_obj.Pressure(T,VV,x)
     print("PL = PV :",PL,"=",PV)
-    fL=vEoS_obj.fugacity_coeff(T,VL,x)
-    print("fL :",fL)
-    fV=vEoS_obj.fugacity_coeff(T,VV,x)
-    print("fV :",fV)
+    phiL=vEoS_obj.fugacity_coeff(T,VL,x)
+    print("phiL :",phiL)
+    phiV=vEoS_obj.fugacity_coeff(T,VV,x)
+    print("phiV :",phiV)
+    
+    print("fV :",phiV*x*PV)
+    print("fL :",phiL*x*PL)
+    
     HrL=vEoS_obj.f_H_res(T,VL,x)
     print("HrL :",HrL)
     HrV=vEoS_obj.f_H_res(T,VV,x)
