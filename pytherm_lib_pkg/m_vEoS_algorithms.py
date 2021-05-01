@@ -37,7 +37,8 @@ def calc_Psat_curve(vEoS_obj,gridT,guess_P=100.):
     gridP[0],_=calc_P_sat(vEoS_obj,gridT[0],guess_P) #primeiro ponto
     #efetua demais cálculos
     for i in range(1,n): #demais pontos
-        gridP[i]=calc_P_sat(vEoS_obj,gridT[i],gridP[i-1])
+        #print(i)
+        gridP[i],_=calc_P_sat(vEoS_obj,gridT[i],gridP[i-1])
         #print(grid_P[i]) #habilitar essa linha - removendo o símbolo de comentário -- # -- - faz com que os resultados de cada iteração sejam exibidos na seção de impressão da célula
     return gridT, gridP
 
